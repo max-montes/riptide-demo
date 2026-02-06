@@ -239,7 +239,7 @@ def demo():
     
     # Verify XNOR matches naive
     assert np.allclose(result_binary_naive, result_binary_xnor), "XNOR should match naive!"
-    print("\n✓ XNOR result matches naive implementation")
+    print("\n[OK] XNOR result matches naive implementation")
     
     # Show the XNOR + popcount in detail for one patch
     print("\n" + "-" * 60)
@@ -304,7 +304,7 @@ def benchmark():
     print(f"Binary conv:   {time_binary:.2f} ms")
     print(f"Ratio:         {time_standard/time_binary:.2f}x")
     
-    print("\n⚠️  Note: This Python implementation won't show speedups!")
+    print("\nNote: This Python implementation won't show speedups!")
     print("   Real gains come from:")
     print("   - Packing 64 values into one uint64")
     print("   - Hardware XNOR + POPCNT instructions")

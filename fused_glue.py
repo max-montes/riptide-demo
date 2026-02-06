@@ -160,7 +160,7 @@ def demo():
 
     # --- Unfused path ---
     print("\n" + "-" * 60)
-    print("UNFUSED: BatchNorm → Sign (5 ops per element)")
+    print("UNFUSED: BatchNorm -> Sign (5 ops per element)")
     print("-" * 60)
 
     bn_output = batch_norm(conv_output, mean, var, gamma, beta)
@@ -184,7 +184,7 @@ def demo():
 
     # --- Verify they match ---
     assert np.array_equal(unfused_result, fused_result), "Results should match!"
-    print("\n✓ Fused result matches unfused result exactly")
+    print("\n[OK] Fused result matches unfused result exactly")
 
     # --- Show the math ---
     print("\n" + "-" * 60)
@@ -203,7 +203,7 @@ def demo():
     print(f"    sign({bn_val:.4f}) = {1 if bn_val >= 0 else -1}")
     print(f"\n  Fused path:")
     print(f"    threshold = {mean} - ({beta} * {std:.4f} / {gamma}) = {threshold:.4f}")
-    print(f"    x >= threshold?  {x:.4f} >= {threshold:.4f}?  {'Yes → +1' if x >= threshold else 'No → -1'}")
+    print(f"    x >= threshold?  {x:.4f} >= {threshold:.4f}?  {'Yes -> +1' if x >= threshold else 'No -> -1'}")
     print(f"\n  Same result, but 1 comparison instead of 5 float ops!")
 
 
@@ -256,7 +256,7 @@ def benchmark():
     print(f"  Fused:   {num_layers} × (BinaryConv + FusedGlue)")
     print(f"         = {num_layers * 2} fast ops, zero unnecessary float ops")
     print(f"\n  The float ops between layers were the bottleneck.")
-    print(f"  Fused Glue removes them → binary conv speed is no longer masked.")
+    print(f"  Fused Glue removes them -> binary conv speed is no longer masked.")
 
 
 if __name__ == "__main__":
