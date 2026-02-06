@@ -13,7 +13,9 @@ Binary:    output = 2 * popcount(XNOR(w, a)) - n  # Bitwise ops
 
 ## What's In This Repo
 
-`binary_conv.py` implements three versions of 2D convolution:
+### `binary_conv.py` — Binary Convolution
+
+Three implementations of 2D convolution, from standard to fully binarized:
 
 | Method | Description | Operations per output pixel |
 |--------|-------------|---------------------------|
@@ -21,25 +23,39 @@ Binary:    output = 2 * popcount(XNOR(w, a)) - n  # Bitwise ops
 | **Binary (naive)** | Binarize then count matches | 9 comparisons + counting |
 | **Binary (XNOR)** | Bit-pack → XNOR → popcount | 1 XNOR + 1 popcount |
 
-The demo walks through each step:
-1. **Binarization** — converting float values to +1/-1
-2. **Bit packing** — compressing binary values into integers
-3. **XNOR + popcount** — replacing multiplication with bitwise ops
-4. **Verification** — proving XNOR matches the naive implementation
-5. **Benchmarking** — comparing performance (with caveats)
+Walks through binarization, bit packing, XNOR + popcount, and verifies the XNOR implementation matches the naive one.
+
+### `fused_glue.py` — Fused Glue Operator (Riptide's Key Innovation)
+
+Previous BNN work couldn't achieve real speedups because floating-point BatchNorm + Sign operations between binary layers dominated runtime:
+
+```
+BinaryConv (fast!) → BatchNorm (FLOAT!) → Sign (FLOAT!) → BinaryConv (fast!)
+```
+
+Riptide's insight: since we only care about the **sign** of the BatchNorm output, the entire BatchNorm + Sign pipeline collapses to a single threshold comparison:
+
+```
+Before: 4 float ops + 1 comparison per element (every inference)
+After:  1 comparison against a precomputed threshold
+
+threshold = mean - beta * sqrt(var) / gamma   (computed once at model conversion)
+```
+
+The demo shows identical results with ~4× fewer ops, and explains why this unlocks the speedups that binary convolutions promise.
 
 ## Running
 
 ```bash
 pip install numpy
 python binary_conv.py
+python fused_glue.py
 ```
 
 ## Example Output
 
+### Binary Convolution
 ```
-XNOR + POPCOUNT WALKTHROUGH (first patch)
-
 Packed patch:  101010010 (338)    ← 9 binary values in one integer
 Packed kernel: 110110110 (438)
 XNOR result:   100011011 (283)    ← 1 where bits match
@@ -47,14 +63,21 @@ Popcount:      5                   ← 5 matches out of 9
 Dot product:   2 * 5 - 9 = 1
 ```
 
-## Why Python Won't Show Real Speedups
+### Fused Glue
+```
+Unfused (BN + Sign): 0.371 ms    (5 ops per element)
+Fused Glue:          0.089 ms    (1 op per element)
+Speedup:             4.2×
+Ops eliminated:      200,704 (80%)
+```
+
+## Why Python Won't Show Full Speedups
 
 This implementation is educational. Real BNN speedups (4-12×) require:
 - **Packing 64 values** into a single `uint64` (we only pack 9)
 - **Hardware POPCNT** instruction (single cycle on modern CPUs)
 - **SIMD/NEON vectorization** for parallel bitwise ops
 - **TVM-optimized memory layouts** and kernel scheduling
-- **Fused Glue operator** — Riptide's key innovation that eliminates floating-point ops between binary layers
 
 ## The Riptide Paper
 
